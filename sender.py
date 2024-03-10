@@ -6,6 +6,34 @@ from email.mime.text import MIMEText
 from google.auth.transport.requests import Request
 import base64
 import os
+import openpyxl
+import re
+
+def is_valid_email(email):
+    regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if re.match(regex, email):
+        return True
+    else:
+        return False
+
+def read_emails_from_excel_file(filename):
+    try:
+        workbook = openpyxl.load_workbook(filename)
+        sheet = workbook.active
+        valid_emails = []
+        for row in range(1, sheet.max_row + 1):  
+            email = sheet.cell(row=row, column=1).value 
+            if email and is_valid_email(email): 
+                valid_emails.append(email)
+        return valid_emails
+
+    except FileNotFoundError:
+        print(f"The file {filename} was not found.")
+        return []
+
+    except Exception as e:
+        print(f"An Error Occurred: {e}")
+        return []
 
 def create_message(sender, to, subject, message_text):
     message = MIMEText(message_text)
@@ -49,12 +77,13 @@ def main():
     creds = get_credentials()
     try:
         service = service_build(creds)
-        sender = "haroon76476@gmail.com"
-        to = "ranamzr0@gmail.com"
+        sender = "sender-email-address-here"
         subject = "Hello from Python"
-        message_text = "Hye This is a test email Mazhar"
-        message = create_message(sender, to, subject, message_text)
-        for i in range(100):
+        message_text = "Hye This is a test email"
+        emails_list = read_emails_from_excel_file('emails.xlsx')
+        print(emails_list)
+        for to in emails_list: 
+            message = create_message(sender, to, subject, message_text)
             send_message(service, "me", message)
     except HttpError as error:
         print(f'An Error Occurred: {error}')
